@@ -35,15 +35,13 @@ jobs:
 
     - name: Desplegar Backend vía SSM
       run: |
-        REPO_URL=${{ secrets.ECR_REGISTRY }}/backend
         aws ssm send-command \
           --instance-ids ${{ secrets.EC2_BACKEND_INSTANCE_ID }} \
           --document-name "AWS-RunShellScript" \
           --parameters '{
             "commands": [
-              "set -e",
               "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-              "sudo docker pull '"$REPO_URL"':latest",
+              "sudo docker pull ${{ secrets.ECR_REGISTRY }}/backend:latest",
               "sudo docker stop backend || true",
               "sudo docker rm backend || true",
               "sudo docker run -d --name backend -p 8080:8080 \
@@ -52,6 +50,6 @@ jobs:
                 -e DB_NAME=${{ secrets.DB_NAME }} \
                 -e DB_USERNAME=${{ secrets.DB_USER }} \
                 -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-                '"$REPO_URL"':latest"
+                ${{ secrets.ECR_REGISTRY }}/backend:latest"
             ]
           }'
