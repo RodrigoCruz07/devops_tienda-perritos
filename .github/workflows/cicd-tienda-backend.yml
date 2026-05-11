@@ -45,11 +45,11 @@ jobs:
               "sudo docker stop backend || true",
               "sudo docker rm backend || true",
               "sudo docker run -d --name backend -p 8080:8080 \
-                -e DB_ENDPOINT=${{ secrets.DB_HOST_PRIVATE_IP }} \
-                -e DB_PORT=3306 \
-                -e DB_NAME=${{ secrets.DB_NAME }} \
-                -e DB_USERNAME=${{ secrets.DB_USER }} \
-                -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                -e DB_ENDPOINT=\"${{ secrets.DB_HOST_PRIVATE_IP }}\" \
+                -e DB_PORT=\"3306\" \
+                -e DB_NAME=\"${{ secrets.DB_NAME }}\" \
+                -e DB_USERNAME=\"${{ secrets.DB_USER }}\" \
+                -e DB_PASSWORD=\"${{ secrets.DB_PASSWORD }}\" \
                 ${{ secrets.ECR_REGISTRY }}/backend:latest"
             ]
           }'
