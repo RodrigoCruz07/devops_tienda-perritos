@@ -35,20 +35,23 @@ jobs:
 
     - name: Desplegar Backend Ventas vía SSM
       env:
-        # Definimos el array de comandos como una cadena limpia
-        COMMANDS: |
+        # Definimos los comandos en una variable de entorno limpia
+        # NOTA: No uses comillas dobles internas para las variables de Docker, no las necesita.
+        COMMANDS_LIST: |
           [
             "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
             "sudo docker pull ${{ secrets.ECR_REGISTRY }}/backend:latest",
             "sudo docker stop backend || true",
             "sudo docker rm backend || true",
-            "sudo docker run -d --name backend -p 8080:8080 -e SPRING_DATASOURCE_URL=jdbc:mysql://${{ secrets.DB_HOST_PRIVATE_IP }}:3306/${{ secrets.DB_NAME }}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_ENDPOINT=${{ secrets.DB_HOST_PRIVATE_IP }} -e DB_PORT=3306 ${{ secrets.ECR_REGISTRY }}/backend:latest"
+            "sudo docker run -d --name backend -p 8080:8080 -e SPRING_DATASOURCE_URL=jdbc:mysql://${{ secrets.DB_HOST_PRIVATE_IP }}:3306/${{ secrets.DB_NAME }}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_PORT=3306 -e DB_ENDPOINT=${{ secrets.DB_HOST_PRIVATE_IP }} ${{ secrets.ECR_REGISTRY }}/backend:latest"
           ]
       run: |
-        # Usamos jq para meter el array dentro del objeto "commands" de forma segura
-        JSON_PARAMS=$(echo $COMMANDS | jq -c '{commands: .}')
-        
+        # 1. Convertimos la lista de arriba en el formato que AWS espera: {"commands":["...","..."]}
+        # Usamos jq para asegurar que el JSON sea perfecto y plano (-c)
+        PAYLOAD=$(echo '$COMMANDS_LIST' | jq -c '{commands: .}')
+
+        # 2. Enviamos el comando usando la variable PAYLOAD
         aws ssm send-command \
           --instance-ids ${{ secrets.EC2_BACKEND_INSTANCE_ID }} \
           --document-name "AWS-RunShellScript" \
-          --parameters "$JSON_PARAMS"
+          --parameters "$PAYLOAD"
