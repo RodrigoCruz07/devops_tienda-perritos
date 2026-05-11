@@ -56,7 +56,7 @@ public class VentaController {
     }
 
     @DeleteMapping("/{idVenta}")
-    @Operation(summary = "Eliminar una venta", description = "Elimina una venta del sistema")
+    @Operation(summary = "Eliminar una venta ", description = "Elimina una venta del sistema")
     public ResponseEntity<Void> eliminarVenta(@PathVariable Long idVenta) throws VentaNotFoundException {
         ventaService.deleteVenta(idVenta);
         return ResponseEntity.noContent().build(); // Respuesta 204 No Content si se elimina correctamente
