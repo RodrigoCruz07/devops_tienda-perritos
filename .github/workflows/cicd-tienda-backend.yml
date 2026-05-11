@@ -1,10 +1,10 @@
-name: CI/CD Tienda Perritos - Backend
+name: CI/CD Proyecto - Backend Ventas
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - "backend/**"
+      - "back-Ventas_SpringBoot/**"  # Ruta real de tu carpeta
 
 jobs:
   build-push-deploy-backend:
@@ -22,28 +22,32 @@ jobs:
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Login en Amazon ECR (runner)
-      uses: aws-actions/amazon-ecr-login@v1
+    - name: Login en Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build imagen Backend y push a ECR
+    - name: Build imagen y push a ECR
       run: |
-        cd backend
-        docker build -t tienda-backend .
-        docker tag tienda-backend:latest ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
-        docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
+        # Usamos la ruta exacta donde está tu pom.xml y Dockerfile
+        REPO_URL=${{ secrets.ECR_REGISTRY }}/backend
+        docker build -t backend ./back-Ventas_SpringBoot/Springboot-API-REST
+        docker tag backend:latest $REPO_URL:latest
+        docker push $REPO_URL:latest
 
     - name: Desplegar Backend vía SSM
       run: |
+        REPO_URL=${{ secrets.ECR_REGISTRY }}/backend
         aws ssm send-command \
           --instance-ids ${{ secrets.EC2_BACKEND_INSTANCE_ID }} \
           --document-name "AWS-RunShellScript" \
-          --comment "Actualizar tienda-backend desde ECR" \
-          --parameters '{"commands":[
-            "set -e",
-            "aws ecr get-login-password --region '${{ secrets.AWS_REGION }}' | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-            "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:latest",
-            "docker stop tienda-backend || true",
-            "docker rm tienda-backend || true",
-            "docker run -d --name tienda-backend -p 3001:3001 ${{ secrets.ECR_REPO_URL_BACKEND }}:latest"
-          ]}' \
-          --output text
+          --parameters "{\"commands\":[
+            \"set -e\",
+            \"export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}\",
+            \"export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}\",
+            \"export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}\",
+            \"export AWS_DEFAULT_REGION=${{ secrets.AWS_REGION }}\",
+            \"aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}\",
+            \"sudo docker pull $REPO_URL:latest\",
+            \"sudo docker stop backend || true\",
+            \"sudo docker rm backend || true\",
+            \"sudo docker run -d --name backend -p 8080:8080 $REPO_URL:latest\"
+          ]}"
