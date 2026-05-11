@@ -42,9 +42,9 @@ jobs:
             "commands": [
               "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
               "sudo docker pull ${{ secrets.ECR_REGISTRY }}/backend:latest",
-              "sudo docker stop backend-ventas || true",
-              "sudo docker rm backend-ventas || true",
-              "sudo docker run -d --name backend-ventas -p 8080:8080 \
+              "sudo docker stop backend || true",
+              "sudo docker rm backend || true",
+              "sudo docker run -d --name backend -p 8080:8080 \
                 -e DB_ENDPOINT=\"${{ secrets.DB_HOST_PRIVATE_IP }}\" \
                 -e DB_PORT=\"3306\" \
                 -e DB_NAME=\"${{ secrets.DB_NAME }}\" \
