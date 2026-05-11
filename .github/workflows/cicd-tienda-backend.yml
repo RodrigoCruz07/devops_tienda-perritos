@@ -32,47 +32,13 @@ jobs:
         docker tag backend:latest $REPO_URL:latest
         docker push $REPO_URL:latest
 
-    name: CI/CD Proyecto - Backend Ventas
-
-on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - "back-Ventas_SpringBoot/**"
-
-jobs:
-  build-push-deploy-backend:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout código
-      uses: actions/checkout@v3
-
-    - name: Configurar credenciales AWS
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: ${{ secrets.AWS_REGION }}
-
-    - name: Login en Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v2
-
-    - name: Build imagen y push a ECR
-      run: |
-        REPO_URL=${{ secrets.ECR_REGISTRY }}/backend
-        docker build -t backend ./back-Ventas_SpringBoot/Springboot-API-REST
-        docker tag backend:latest $REPO_URL:latest
-        docker push $REPO_URL:latest
-
     - name: Desplegar Backend Ventas vía SSM
       run: |
-        # 1. Definimos el comando docker run en una sola línea, sin barras diagonales \
-        # Usamos los nombres exactos de tu application.properties: DB_ENDPOINT, DB_NAME, DB_USERNAME, DB_PASSWORD
+        # 1. Comando de Docker en UNA SOLA LÍNEA (sin barras \)
+        # Usamos DB_USERNAME porque así lo pusiste en tu application.properties
         DOCKER_CMD="sudo docker run -d --name backend -p 8080:8080 -e DB_ENDPOINT=${{ secrets.DB_HOST_PRIVATE_IP }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_USERNAME=${{ secrets.DB_USER }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} ${{ secrets.ECR_REGISTRY }}/backend:latest"
 
-        # 2. Construimos el JSON usando JQ para que sea imposible que falle el formato
+        # 2. Generar el JSON de forma segura con jq
         PAYLOAD=$(jq -nc \
           --arg login "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}" \
           --arg pull "sudo docker pull ${{ secrets.ECR_REGISTRY }}/backend:latest" \
@@ -81,7 +47,7 @@ jobs:
           --arg run "$DOCKER_CMD" \
           '{commands: [$login, $pull, $stop, $rm, $run]}')
 
-        # 3. Enviamos a AWS
+        # 3. Ejecutar comando en AWS
         aws ssm send-command \
           --instance-ids ${{ secrets.EC2_BACKEND_INSTANCE_ID }} \
           --document-name "AWS-RunShellScript" \
