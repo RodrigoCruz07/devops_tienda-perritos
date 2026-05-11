@@ -42,15 +42,14 @@ jobs:
             "commands": [
               "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
               "sudo docker pull ${{ secrets.ECR_REGISTRY }}/backend:latest",
-              "sudo docker stop backend-ventas || true",
-              "sudo docker rm backend-ventas || true",
-             "sudo docker run -d --name backend-ventas -p 8080:8080 \
+              "sudo docker stop backend || true",
+              "sudo docker rm backend || true",
+              "sudo docker run -d --name backend -p 8080:8080 \
                 -e SPRING_DATASOURCE_URL=\"jdbc:mysql://${{ secrets.DB_HOST_PRIVATE_IP }}:3306/${{ secrets.DB_NAME }}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC\" \
                 -e SPRING_DATASOURCE_USERNAME=\"${{ secrets.DB_USER }}\" \
                 -e SPRING_DATASOURCE_PASSWORD=\"${{ secrets.DB_PASSWORD }}\" \
-                -e DB_ENDPOINT=\"${{ secrets.DB_HOST_PRIVATE_IP }}\" \
                 -e DB_PORT=3306 \
-                -e DB_NAME=\"${{ secrets.DB_NAME }}\" \
+                -e DB_ENDPOINT=${{ secrets.DB_HOST_PRIVATE_IP }} \
                 ${{ secrets.ECR_REGISTRY }}/backend:latest"
             ]
           }'
