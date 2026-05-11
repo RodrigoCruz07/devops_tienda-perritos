@@ -49,5 +49,5 @@ jobs:
             \"sudo docker pull $REPO_URL:latest\",
             \"sudo docker stop backend || true\",
             \"sudo docker rm backend || true\",
-            \"sudo docker run -d --name backend -p 8080:8080 $REPO_URL:latest\"
+            \"sudo docker run -d --name backend-ventas -p 8080:8080 \-e DB_ENDPOINT=${{ secrets.DB_HOST }} \-e DB_PORT=3306 \-e DB_NAME=tienda_despachos \-e DB_USERNAME=root \-e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \$REPO_URL:latest"
           ]}"
