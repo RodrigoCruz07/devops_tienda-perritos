@@ -45,10 +45,10 @@ jobs:
               "sudo docker stop backend || true",
               "sudo docker rm backend || true",
               "sudo docker run -d --name backend -p 8080:8080 \
-                -e SPRING_DATASOURCE_URL=\"jdbc:mysql://${{ secrets.DB_HOST_PRIVATE_IP }}:3306/${{ secrets.DB_NAME }}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC\" \
+                -e SPRING_DATASOURCE_URL=\"jdbc:mysql://${{ secrets.DB_HOST_PRIVATE_IP }}:${{ secrets.DB_PORT }}/${{ secrets.DB_NAME }}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC\" \
                 -e SPRING_DATASOURCE_USERNAME=\"${{ secrets.DB_USER }}\" \
                 -e SPRING_DATASOURCE_PASSWORD=\"${{ secrets.DB_PASSWORD }}\" \
-                -e DB_PORT=3306 \
+                -e DB_PORT=${{ secrets.DB_PORT }} \
                 -e DB_ENDPOINT=${{ secrets.DB_HOST_PRIVATE_IP }} \
                 ${{ secrets.ECR_REGISTRY }}/backend:latest"
             ]
